@@ -17,6 +17,10 @@ const jsonData = JSON.parse(userData);
 
 const date = Date.now().toString();
 
+const deployedUrl =
+  "http://localhost:6969" ||
+  "https://authentications-using-fs.onrender.com";
+
 
 const UserController = {
   registerUser: async (req, res) => {
@@ -56,7 +60,7 @@ const UserController = {
         const newUser = new User({
           id: date,
           profileImage: req.file
-            ? `http://localhost:6969/api/user/profileImage/${req.file.filename}`
+            ? `${deployedUrl}/api/user/profileImage/${req.file.filename}`
             : `https://dummyimage.com/600x400/${random_hex_color_code()}/fff.png&text=${name
                 .charAt(0)
                 .toUpperCase()}`,
