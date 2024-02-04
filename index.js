@@ -17,6 +17,14 @@ app.use(
 
 app.use("/api/user", AuthenticationRoute);
 
+app.get("/api", (req, res) => {
+  res.json({
+    mesage: "Hello Jii",
+  })
+});
+
+const link = process.env.PRODUCTION_Link || 'http://localhost'
+
 app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}/api`);
+  console.log(`Server is running at ${link}:${port}/api`);
 });
