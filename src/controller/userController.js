@@ -17,9 +17,7 @@ const jsonData = JSON.parse(userData);
 
 const date = Date.now().toString();
 
-const deployedUrl =
-  "http://localhost:6969" ||
-  "https://authentications-using-fs.onrender.com";
+const deployedUrl = "http://localhost:6969" || process.env.PRODUCTION_Link;
 
 
 const UserController = {
