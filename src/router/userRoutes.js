@@ -1,7 +1,7 @@
 const FileController = require("../controller/fileController");
 const UserController = require("../controller/userController");
 const authenticateUser = require("../middleware/AuthMiddleware");
-const fileUploadMiddleware = require("../middleware/fileUploadMiddleware");
+const fileUploadMiddleware = require("../middleware/fileUploadMiddlware");
 
 const router = require("express").Router();
 

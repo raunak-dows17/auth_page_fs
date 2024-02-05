@@ -3,6 +3,7 @@ require("dotenv").config();
 const bodyParser = require("body-parser");
 const path = require("path");
 const AuthenticationRoute = require("./src/router/userRoutes");
+require("./src/config/db");
 
 const app = express();
 
@@ -23,8 +24,8 @@ app.get("/api", (req, res) => {
   })
 });
 
-const link = process.env.PRODUCTION_Link || 'http://localhost'
+const link = process.env.PRODUCTION_Link || `http://localhost:${port}/`
 
 app.listen(port, () => {
-  console.log(`Server is running at ${link}:${port}/api`);
+  console.log(`Server is running at ${link}api`);
 });

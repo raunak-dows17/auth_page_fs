@@ -1,93 +1,89 @@
-const fs = require("fs");
-const path = require("path");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../model/User");
+const cloudinary = require("../config/cloudinary");
 
-function random_hex_color_code() {
-  let n = (Math.random() * 0xfffff * 1000000).toString(16);
-  return n.slice(0, 6);
+function generateRandomHexColorCode() {
+  const randomHexNumber = Math.floor(Math.random() * 16777215);
+
+  const randomHexColorCode = randomHexNumber.toString(16);
+
+  return randomHexColorCode;
 }
-
-const userFile = path.join(__dirname, "../../database/user.json");
-
-const userData = fs.readFileSync(userFile, "utf8");
-
-const jsonData = JSON.parse(userData);
-
-const date = Date.now().toString();
-
-const deployedUrl = "http://localhost:6969" || process.env.PRODUCTION_Link;
-
 
 const UserController = {
   registerUser: async (req, res) => {
     try {
-
       const { name, email, password, phoneNo } = req.body;
 
-      if (!fs.existsSync(userFile)) {
-        fs.writeFileSync(userFile, "[]", "utf8");
+      const existingUser = await User.findOne({ email });
+
+      if (existingUser) {
+        return res.status(400).json({
+          message: `User with ${email} already exists`,
+        });
       }
 
-      const existingUser = jsonData.find((user) => user.email === email);
+      const hashedPassword = await bcrypt.hash(password, 10);
 
-      if (!email) {
-        res.status(401).json({
-          mesage: "Email is required to signup!",
-        });
-      } else if (!name) {
-        res.status(401).json({
-          message: "Username is required to singup!",
-        });
-      } else if (!password) {
-        res.status(401).json({
-          message: "Please enter your password to proceed!",
-        });
-      } else if (!phoneNo) {
-        res.status(401).json({
-          message: "Please enter your phone No. to proceed!",
-        });
-      } else if (existingUser) {
-        return res.status(400).json({
-          message: "User with this email already exists",
-        });
-      } else {
-        const hashedPassword = await bcrypt.hash(password, 10);
+      let newUser;
 
-        const newUser = new User({
-          id: date,
-          profileImage: req.file
-            ? `${deployedUrl}/api/user/profileImage/${req.file.filename}`
-            : `https://dummyimage.com/600x400/${random_hex_color_code()}/fff.png&text=${name
-                .charAt(0)
-                .toUpperCase()}`,
+      if (req.file) {
+        const result = await cloudinary.uploader.upload_stream(
+          {
+            resource_type: "auto",
+            folder: "profilePictures",
+            public_id: `${phoneNo}`,
+            overwrite: true,
+          },
+          (error, result) => {
+            if (error) {
+              console.error(error);
+              return res.status(500).json({
+                message: "Internal server error",
+              });
+            }
+          }
+        );
+
+        req.file.stream.pipe(result);
+
+        newUser = new User({
+          profileImage: result.secure_url,
           name,
           email,
           password: hashedPassword,
           phoneNo,
         });
-
-        jsonData.push(newUser);
-
-        fs.writeFileSync(userFile, JSON.stringify(jsonData), "utf8");
-
-        const payload = {
-          user: {
-            id: newUser._id,
-          },
-        };
-
-        jwt.sign(payload, process.env.JWT_SECRET, (err, token) => {
-          if (err) throw err;
-
-          res.status(201).json({
-            message: `Hey ${name} welcome, thankyou to join us`,
-            id: newUser._id,
-            token: token,
-          });
+      } else {
+        newUser = new User({
+          profileImage: `https://dummyimage.com/600x400/${generateRandomHexColorCode()}/fff.jpg&text=${name
+            .charAt(0)
+            .toUpperCase()}`,
+          name,
+          email,
+          password: hashedPassword,
+          phoneNo,
         });
       }
+
+      await newUser.save();
+
+      const payload = {
+        user: {
+          id: newUser._id,
+        },
+      };
+
+      jwt.sign(payload, process.env.JWT_SECRET, (err, token) => {
+        if (err) throw err;
+
+        res.status(201).json({
+          message: `Hey ${name} welcome, thank you for joining us`,
+          id: newUser._id,
+          token: token,
+        });
+      });
     } catch (error) {
       console.log(error);
       return res.status(500).json({
@@ -100,7 +96,7 @@ const UserController = {
     try {
       const { email, password } = req.body;
 
-      const user = jsonData.find((user) => user.email === email);
+      const user = await User.findOne({ email });
 
       if (!user) {
         res.status(401).json({
@@ -133,16 +129,16 @@ const UserController = {
     } catch (error) {
       console.log({ error });
       res.status(500).json({
-        mesage: "Internal Server Error",
+        message: "Internal Server Error",
       });
     }
   },
 
-  userProfile: (req, res) => {
+  userProfile: async (req, res) => {
     try {
       const id = req.params.id;
 
-      const user = jsonData.find((user) => user._id === id);
+      const user = await User.findById(id);
 
       if (!user) {
         res.status(404).json({

@@ -1,14 +1,23 @@
-class User {
-  constructor({ id, profileImage, name, email, password, phoneNo }) {
-    this._id = id;
-    this.profileImage = profileImage;
-    this.name = name;
-    this.email = email;
-    this.password = password;
-    this.phoneNo = phoneNo;
-  }
+const mongoose = require("mongoose");
 
-  // Additional methods or validations can be added here
-}
+const userSchema = new mongoose.Schema({
+  profileImage: String,
+  name: { type: String, required: true },
+  email: {
+    type: String,
+    unique: true, // Ensures email is unique
+    required: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
+  phoneNo: { type: String, required: true },
+}, {
+  timestamps: true,
+});
+
+// Create a User model based on the schema
+const User = mongoose.model("User", userSchema);
 
 module.exports = User;

@@ -1,21 +1,24 @@
-const fs = require("fs");
-const path = require("path");
+const cloudinary = require("cloudinary").v2;
 
-const FileController = {
-  getImageFile: (req, res) => {
-    const filename = req.params.filename;
-    const filePath = path
-      .join(__dirname, "../../database/uploads/profilePictures", filename)
-      .toString();
+const getImageFile = (req, res) => {
+  const filename = req.params.filename;
 
-    if (fs.existsSync(filePath)) {
-      res.sendFile(filePath);
-    } else {
-      res.status(404).json({
-        message: "File not found",
-      });
+  // Serve image from Cloudinary
+  cloudinary.url(
+    `profile_pictures/${filename}`,
+    { secure: true, type: "fetch" },
+    (error, url) => {
+      if (error) {
+        console.error(error);
+        return res.status(500).json({
+          message: "Internal server error",
+        });
+      }
+      res.redirect(url);
     }
-  },
+  );
 };
 
-module.exports = FileController;
+module.exports = {
+  getImageFile,
+};
